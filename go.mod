@@ -1,6 +1,6 @@
 module github.com/mastercard/client-encryption-go
 
-go 1.15
+go 1.23
 
 require github.com/Jeffail/gabs/v2 v2.6.1
 
