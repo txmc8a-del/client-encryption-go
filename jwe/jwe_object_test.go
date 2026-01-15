@@ -158,6 +158,7 @@ func TestDecrypt_ShouldReturnError_WhenAuthTagIsInvalidAndVerificationEnabled(t 
 	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
 	assert.Empty(t, decryptedPayload)
 	assert.NotNil(t, err)
+	assert.EqualError(t, err, "invalid authentication tag")
 }
 
 func TestDecrypt_ShouldReturnDecryptedPayload_WhenVerificationEnabledAndAuthTagIsValid(t *testing.T) {
