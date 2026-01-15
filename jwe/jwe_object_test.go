@@ -134,7 +134,7 @@ func TestDecrypt_ShouldReturnDecryptedPayload_WhenPayloadIsCbcEncrypted(t *testi
 	assert.Equal(t, "bar", decryptedPayload)
 }
 
-func TestDecrypt_ShouldReturnError_WhenAuthTagIsInvalid(t *testing.T) {
+func TestDecrypt_ShouldReturnError_WhenAuthTagIsInvalidAndVerificationEnabled(t *testing.T) {
 	jweObject, err := jwe.ParseJWEObject(encryptedPayloadCbc)
 	assert.Nil(t, err)
 
@@ -152,9 +152,33 @@ func TestDecrypt_ShouldReturnError_WhenAuthTagIsInvalid(t *testing.T) {
 	cb := jwe.NewJWEConfigBuilder()
 	jweConfig := cb.WithDecryptionKey(decryptionKey).
 		WithCertificate(certificate).
+		WithHmacVerificationEnabled(true).
 		Build()
 
 	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
 	assert.Empty(t, decryptedPayload)
 	assert.NotNil(t, err)
+}
+
+func TestDecrypt_ShouldReturnDecryptedPayload_WhenVerificationEnabledAndAuthTagIsValid(t *testing.T) {
+	jweObject, err := jwe.ParseJWEObject(encryptedPayloadCbc)
+	assert.Nil(t, err)
+
+	decryptionKeyPath := "../testdata/keys/pkcs8/test_key_pkcs8-2048.der"
+	certificatePath := "../testdata/certificates/test_certificate-2048.der"
+
+	decryptionKey, err := utils.LoadUnencryptedDecryptionKey(decryptionKeyPath)
+	assert.Nil(t, err)
+	certificate, err := utils.LoadEncryptionCertificate(certificatePath)
+	assert.Nil(t, err)
+
+	cb := jwe.NewJWEConfigBuilder()
+	jweConfig := cb.WithDecryptionKey(decryptionKey).
+		WithCertificate(certificate).
+		WithHmacVerificationEnabled(true).
+		Build()
+
+	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
+	assert.Nil(t, err)
+	assert.Equal(t, "bar", decryptedPayload)
 }
