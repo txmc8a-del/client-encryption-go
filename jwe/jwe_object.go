@@ -87,8 +87,8 @@ func (jweObject JWEObject) Decrypt(config JWEConfig) (string, error) {
 		}
 		return string(plainText), nil
 	case A128CBC_HS256:
-		if config.enableHmacVerification {
-			if err := verifyAuthTagCbc(cek, nonce, cipherText, authTag, aad); err != nil {
+		if config.enableAuthTagVerification {
+			if err := verifyCbcAuthTag(cek, nonce, cipherText, authTag, aad); err != nil {
 				return "", err
 			}
 		}
@@ -103,7 +103,7 @@ func (jweObject JWEObject) Decrypt(config JWEConfig) (string, error) {
 	}
 }
 
-func verifyAuthTagCbc(cek, nonce, cipherText, authTag, aad []byte) error {
+func verifyCbcAuthTag(cek, nonce, cipherText, authTag, aad []byte) error {
 	macKeyLen := len(cek) / 2
 	if macKeyLen == 0 {
 		return errors.New("invalid cek length for auth tag verification")

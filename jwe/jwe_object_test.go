@@ -152,7 +152,7 @@ func TestDecrypt_ShouldReturnError_WhenAuthTagIsInvalidAndVerificationEnabled(t 
 	cb := jwe.NewJWEConfigBuilder()
 	jweConfig := cb.WithDecryptionKey(decryptionKey).
 		WithCertificate(certificate).
-		WithHmacVerificationEnabled(true).
+		WithAuthTagVerificationEnabled(true).
 		Build()
 
 	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
@@ -176,7 +176,7 @@ func TestDecrypt_ShouldReturnDecryptedPayload_WhenVerificationEnabledAndAuthTagI
 	cb := jwe.NewJWEConfigBuilder()
 	jweConfig := cb.WithDecryptionKey(decryptionKey).
 		WithCertificate(certificate).
-		WithHmacVerificationEnabled(true).
+		WithAuthTagVerificationEnabled(true).
 		Build()
 
 	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
