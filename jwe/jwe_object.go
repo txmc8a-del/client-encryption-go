@@ -9,7 +9,6 @@ import (
 	"crypto/subtle"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/mastercard/client-encryption-go/aes_encryption"
