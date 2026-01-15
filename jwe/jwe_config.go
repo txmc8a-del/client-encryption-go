@@ -15,6 +15,7 @@ type JWEConfig struct {
 	encryptionPaths          map[string]string
 	decryptionPaths          map[string]string
 	encryptionKeyFingerprint string
+	enableHmacVerification 	 bool
 }
 
 func (config *JWEConfig) GetDecryptionKey() *rsa.PrivateKey {

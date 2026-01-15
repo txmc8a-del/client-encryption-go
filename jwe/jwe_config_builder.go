@@ -17,6 +17,7 @@ type JWEConfigBuilder struct {
 	encryptionPaths          map[string]string
 	decryptionPaths          map[string]string
 	encryptionKeyFingerprint string
+	enableHmacVerification   bool
 }
 
 func NewJWEConfigBuilder() *JWEConfigBuilder {
@@ -74,6 +75,11 @@ func (cb *JWEConfigBuilder) WithEncryptedValueFieldName(encryptedValueFieldName 
 	return cb
 }
 
+func (cb *JWEConfigBuilder) WithHmacVerificationEnabled(enableHmacVerification bool) *JWEConfigBuilder {
+	cb.enableHmacVerification = enableHmacVerification
+	return cb
+}
+
 func (cb *JWEConfigBuilder) computeKeyFingerprint() {
 	derEncoded, err := x509.MarshalPKIXPublicKey(cb.encryptionKey)
 	if err != nil {
@@ -100,5 +106,6 @@ func (cb *JWEConfigBuilder) Build() *JWEConfig {
 		encryptionPaths:          cb.encryptionPaths,
 		decryptionPaths:          cb.decryptionPaths,
 		encryptionKeyFingerprint: cb.encryptionKeyFingerprint,
+		enableHmacVerification:   cb.enableHmacVerification,
 	}
 }
