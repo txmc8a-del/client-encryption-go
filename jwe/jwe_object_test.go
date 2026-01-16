@@ -1,7 +1,9 @@
 package jwe_test
 
 import (
-	"strings"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"testing"
 
 	"github.com/mastercard/client-encryption-go/jwe"
@@ -134,12 +136,69 @@ func TestDecrypt_ShouldReturnDecryptedPayload_WhenPayloadIsCbcEncrypted(t *testi
 	assert.Equal(t, "bar", decryptedPayload)
 }
 
-func TestDecrypt_ShouldReturnError_WhenAuthTagIsInvalidAndVerificationEnabled(t *testing.T) {
+func TestDecrypt_ShouldReturnError_WhenCekLengthIsInvalidAndVerificationEnabled(t *testing.T) {
 	jweObject, err := jwe.ParseJWEObject(encryptedPayloadCbc)
 	assert.Nil(t, err)
 
-	// Tamper with the auth tag while keeping it base64url valid
-	jweObject.AuthTag = strings.Repeat("A", len(jweObject.AuthTag))
+	decryptionKeyPath := "../testdata/keys/pkcs8/test_key_pkcs8-2048.der"
+	certificatePath := "../testdata/certificates/test_certificate-2048.der"
+
+	decryptionKey, err := utils.LoadUnencryptedDecryptionKey(decryptionKeyPath)
+	assert.Nil(t, err)
+	certificate, err := utils.LoadEncryptionCertificate(certificatePath)
+	assert.Nil(t, err)
+
+	// Replace the encrypted key with one that decrypts to a short CEK (16 bytes)
+	shortCek := make([]byte, 16)
+	encryptedShortCek, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, certificate.PublicKey.(*rsa.PublicKey), shortCek, nil)
+	assert.Nil(t, err)
+	jweObject.EncryptedKey = utils.Base64UrlEncode(encryptedShortCek)
+
+	cb := jwe.NewJWEConfigBuilder()
+	jweConfig := cb.WithDecryptionKey(decryptionKey).
+		WithCertificate(certificate).
+		WithAuthTagVerificationEnabled(true).
+		Build()
+
+	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
+	assert.Empty(t, decryptedPayload)
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "invalid cek length for A128CBC-HS256")
+}
+
+func TestDecrypt_ShouldReturnError_WhenAuthTagLengthIsInvalidAndVerificationEnabled(t *testing.T) {
+	jweObject, err := jwe.ParseJWEObject(encryptedPayloadCbc)
+	assert.Nil(t, err)
+
+	// Make the auth tag decode to an invalid length (not 16 bytes)
+	jweObject.AuthTag = utils.Base64UrlEncode([]byte("short-tag"))
+
+	decryptionKeyPath := "../testdata/keys/pkcs8/test_key_pkcs8-2048.der"
+	certificatePath := "../testdata/certificates/test_certificate-2048.der"
+
+	decryptionKey, err := utils.LoadUnencryptedDecryptionKey(decryptionKeyPath)
+	assert.Nil(t, err)
+	certificate, err := utils.LoadEncryptionCertificate(certificatePath)
+	assert.Nil(t, err)
+
+	cb := jwe.NewJWEConfigBuilder()
+	jweConfig := cb.WithDecryptionKey(decryptionKey).
+		WithCertificate(certificate).
+		WithAuthTagVerificationEnabled(true).
+		Build()
+
+	decryptedPayload, err := jweObject.Decrypt(*jweConfig)
+	assert.Empty(t, decryptedPayload)
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "invalid authentication tag length")
+}
+
+func TestDecrypt_ShouldReturnError_WhenAuthTagMacIsInvalidAndVerificationEnabled(t *testing.T) {
+	jweObject, err := jwe.ParseJWEObject(encryptedPayloadCbc)
+	assert.Nil(t, err)
+
+	// Preserve tag length (16 bytes decoded) but change value so MAC verification fails
+	jweObject.AuthTag = utils.Base64UrlEncode(make([]byte, 16))
 
 	decryptionKeyPath := "../testdata/keys/pkcs8/test_key_pkcs8-2048.der"
 	certificatePath := "../testdata/certificates/test_certificate-2048.der"

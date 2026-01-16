@@ -104,11 +104,15 @@ func (jweObject JWEObject) Decrypt(config JWEConfig) (string, error) {
 }
 
 func verifyCbcAuthTag(cek, nonce, cipherText, authTag, aad []byte) error {
-	macKeyLen := len(cek) / 2
-	if macKeyLen == 0 {
-		return errors.New("invalid cek length for auth tag verification")
+	if len(cek) != 32 {
+		return errors.New("invalid cek length for A128CBC-HS256")
 	}
+	macKeyLen := len(cek) / 2
 	macKey := cek[:macKeyLen]
+
+	if len(authTag) != 16 {
+		return errors.New("invalid authentication tag length")
+	}
 
 	al := make([]byte, 8)
 	binary.BigEndian.PutUint64(al, uint64(len(aad)*8))
